@@ -2,7 +2,6 @@
 const
   ApiBuilder = require('claudia-api-builder'),
   fs = require('./fs-promise'),
-  childProcess = require('./child-process-promise'),
   api = new ApiBuilder();
 
 module.exports = api;
@@ -10,12 +9,13 @@ module.exports = api;
 
 api.post('/generate-pdf', (request) => {
   'use strict';
-  const HummusRecipe = require('hummus-recipe'),
+  const jsonData = JSON.parse(request.rawBody),
+        {base64, text, x, y} = jsonData,
+        HummusRecipe = require('hummus-recipe'),
         initialTempFile = `/tmp/${request.lambdaContext.awsRequestId}.pdf`,
         finishedTempFile = `/tmp/${(Date.now()).toString()}.pdf`,
-        data = new Buffer(request.body, 'base64');
+        data = new Buffer(base64, 'base64');
   let result;
-
 
   // create initialTempFile by reading buffer sent from POST method
   return fs.writeFilePromise(initialTempFile, data)
@@ -27,7 +27,7 @@ api.post('/generate-pdf', (request) => {
       return pdfDoc
         // edit detail
         .editPage(1)
-        .text('hello world', 10, 10)
+        .text(text, x, y)
         .endPage()
         .endPDF();
     })
